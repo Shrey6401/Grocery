@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:grocery/screens/auth-ui/welcome.dart';
 import 'package:grocery/screens/userpanel/main-screen.dart';
 import 'package:grocery/utils/app-constant.dart';
 import 'package:lottie/lottie.dart';
@@ -17,7 +18,7 @@ class _splashscreenState extends State<splashscreen> {
   void initState() {
     super.initState();
     Timer(Duration(seconds: 6), () {
-      Get.offAll(()=>mainscreen());
+      Get.offAll(()=>welcome_screen());
     });
   }
 

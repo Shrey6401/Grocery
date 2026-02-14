@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:grocery/screens/auth-ui/Sign_in.dart';
+import 'package:grocery/screens/auth-ui/Sign_up.dart';
 import 'package:grocery/screens/auth-ui/splash-screen.dart';
 import 'package:grocery/screens/userpanel/main-screen.dart';
 
@@ -21,7 +23,7 @@ class MyApp extends StatelessWidget {
 
         colorScheme: .fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: splashscreen(),
+      home: SignUp(),
     );
   }
 }
