@@ -31,7 +31,7 @@ class MyApp extends StatelessWidget {
 
         colorScheme: .fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: welcome_screen(),
+      home: splashscreen(),
       builder: EasyLoading.init(),
     );
   }

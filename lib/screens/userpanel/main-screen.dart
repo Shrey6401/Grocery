@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_navigation/src/extension_navigation.dart';
@@ -24,6 +25,8 @@ class _mainscreenState extends State<mainscreen> {
           GestureDetector(
             onTap:(){
               GoogleSignIn googleSignIn = GoogleSignIn();
+              FirebaseAuth auth = FirebaseAuth.instance;
+              auth.signOut();
               googleSignIn.signOut();
               Get.offAll(() =>  welcome_screen());
 

@@ -3,6 +3,7 @@ import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_instance/src/extension_instance.dart';
 import 'package:get/get_navigation/src/extension_navigation.dart';
 import 'package:grocery/controllers/google_signin_controller.dart';
+import 'package:grocery/screens/auth-ui/Sign_in.dart';
 import 'package:grocery/utils/app-constant.dart';
 import 'package:lottie/lottie.dart';
 
@@ -65,7 +66,9 @@ class _welcome_screenState extends State<welcome_screen> {
               ),
               child: TextButton.icon(
                 icon: Icon(Icons.mail,color: Colors.blue,size: 30,),
-                onPressed: () {},
+                onPressed: () {
+                  Get.to(()=>SignIn());
+                },
                 label: Text("Sign with Email",style: TextStyle(color: Colors.white),),
               ),
             ),
