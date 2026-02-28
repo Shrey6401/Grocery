@@ -6,6 +6,7 @@ class Appconstant {
   static const appmaincolor = Color(0xFFbf1b08);
   static const appSecondaryColor = Color(0xFF981206);
   static const appTextColor = Color(0xFFF5F4F4);
+  static const appTextColor2 = Color(0xFFbf1b08);
   static const appStatusBarColor = Color(0xFFF5F4F4);
 
 

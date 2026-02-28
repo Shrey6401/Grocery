@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
+import 'package:grocery/controllers/get-device-token-controller.dart';
 import 'package:grocery/models/user-model.dart';
 import 'package:grocery/models/user-model.dart';
 import 'package:grocery/utils/app-constant.dart';
@@ -20,6 +21,8 @@ class SignupController extends GetxController {
     String userPassword,
     String userDeviceToken,
   ) async {
+    final Getdevicetokencontroller getdevicetokencontroller = Get.put(Getdevicetokencontroller());
+
     try {
       EasyLoading.show(status: "Please wait...");
       UserCredential userCredential = await _auth
@@ -35,7 +38,7 @@ class SignupController extends GetxController {
         email: userEmail,
         phone: userPhone,
         userImg: '',
-        userDeviceToken: userDeviceToken,
+        userDeviceToken: getdevicetokencontroller.deviceToken.toString(),
         country: '',
         userAddress: '',
         street: '',

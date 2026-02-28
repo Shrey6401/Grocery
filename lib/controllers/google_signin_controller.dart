@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:grocery/controllers/get-device-token-controller.dart';
 import 'package:grocery/models/user-model.dart';
 import 'package:grocery/screens/userpanel/main-screen.dart';
 
@@ -17,6 +18,7 @@ class GoogleSignInController extends GetxController {
 
   // 🔹 Sign-In Method
   Future<void> signInWithGoogle() async {
+    final Getdevicetokencontroller getdevicetokencontroller = Get.put(Getdevicetokencontroller());
     try {
 
       final GoogleSignInAccount? googleUser =
@@ -43,7 +45,7 @@ class GoogleSignInController extends GetxController {
             email: user.email ?? '',
             phone: user.phoneNumber ?? '',
             userImg: user.photoURL ?? '',
-            userDeviceToken: '',
+            userDeviceToken: getdevicetokencontroller.deviceToken.toString(),
             country: '',
             userAddress: '',
             street: '',
