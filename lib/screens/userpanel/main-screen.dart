@@ -4,9 +4,13 @@ import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_navigation/src/extension_navigation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:grocery/screens/auth-ui/welcome.dart';
+import 'package:grocery/screens/userpanel/all-categories-screen.dart';
 import 'package:grocery/utils/app-constant.dart';
 import 'package:grocery/widgits/banner-widget.dart';
+import 'package:grocery/widgits/category-widget.dart';
 import 'package:grocery/widgits/custom-drawer-widget.dart';
+import 'package:grocery/widgits/flash-sale-widget.dart';
+import 'package:grocery/widgits/heading-widget.dart';
 import 'package:lottie/lottie.dart';
 
 class mainscreen extends StatefulWidget {
@@ -35,10 +39,23 @@ class _mainscreenState extends State<mainscreen> {
               physics: BouncingScrollPhysics(),
               child: Column(
                 children: [
-                  SizedBox(
-                    height: Get.height/0.90,
+                  Headingwidget(
+                    headingTitle: "Categories",
+                    headingSubTitle:"According to your budget",
+                    buttonText: "See More >",
+                    onTap: (){
+                      Get.to(()=>AllCategoriesScreen());
+                    },
                   ),
-                  SizedBox(height: 1),
+                  CategoriesWidget(),
+                  Headingwidget(
+                    headingTitle: "Flash",
+                    headingSubTitle:"According to your budget",
+                    buttonText: "See More >",
+                    onTap: (){},
+                  ),
+                  FlashSaleWidget(),
+                  SizedBox(height: Get.height/0.90),
                 ],
               ),
             ),
