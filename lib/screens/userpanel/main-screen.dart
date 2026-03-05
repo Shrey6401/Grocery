@@ -5,12 +5,15 @@ import 'package:get/get_navigation/src/extension_navigation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:grocery/screens/auth-ui/welcome.dart';
 import 'package:grocery/screens/userpanel/all-categories-screen.dart';
+import 'package:grocery/screens/userpanel/all-flash-sale-products.dart';
+import 'package:grocery/screens/userpanel/all-product-screen.dart';
 import 'package:grocery/utils/app-constant.dart';
 import 'package:grocery/widgits/banner-widget.dart';
 import 'package:grocery/widgits/category-widget.dart';
 import 'package:grocery/widgits/custom-drawer-widget.dart';
 import 'package:grocery/widgits/flash-sale-widget.dart';
 import 'package:grocery/widgits/heading-widget.dart';
+import 'package:grocery/widgits/product-widget.dart';
 import 'package:lottie/lottie.dart';
 
 class mainscreen extends StatefulWidget {
@@ -52,10 +55,19 @@ class _mainscreenState extends State<mainscreen> {
                     headingTitle: "Flash",
                     headingSubTitle:"According to your budget",
                     buttonText: "See More >",
-                    onTap: (){},
+                    onTap: ()=>Get.to(()=>AllFlashSaleProductScreen()),
                   ),
                   FlashSaleWidget(),
+                  Headingwidget(
+                    headingTitle: "All Products",
+                    headingSubTitle:"According to your budget",
+                    buttonText: "See More >",
+                    onTap: ()=>Get.to(()=>AllProductScreen()),
+                  ),
+                  AllProductSaleScreen(),
                   SizedBox(height: Get.height/0.90),
+
+
                 ],
               ),
             ),

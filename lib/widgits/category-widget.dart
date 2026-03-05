@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:grocery/models/categories-model.dart';
+import 'package:grocery/screens/userpanel/single-category-product-screen.dart';
 import 'package:image_card/image_card.dart';
 
 class CategoriesWidget extends StatelessWidget {
@@ -55,9 +56,9 @@ class CategoriesWidget extends StatelessWidget {
                 return Row(
                   children: [
                     GestureDetector(
-                      onTap: () {},/*=> Get.to(() => AllSingleCategoryProductsScreen(
+                      onTap: () => Get.to(() => AllSingleCategoryProductsScreen(
                           categoryId: categoriesModel.categoryId)
-                      ),*/
+                      ),
                       child: Padding(
                         padding: EdgeInsets.all(5.0),
                         child: Container(
