@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:grocery/models/product-model.dart';
+import 'package:grocery/screens/userpanel/product%20detail.dart';
 import 'package:grocery/utils/app-constant.dart';
 import 'package:image_card/image_card.dart';
 
@@ -83,22 +84,28 @@ class _AllFlashSaleProductScreenState extends State<AllFlashSaleProductScreen> {
                 createdAt: productData['createdAt'],
                 updatedAt: productData['updatedAt'],
               );
-              return FillImageCard(
-                borderRadius: 20,
-                width: Get.width,
-                heightImage: Get.height / 8,
+              return GestureDetector(
+                onTap: (){
+                  Get.to(()=>ProductDetail(productModel: productModel));
 
-                imageProvider: (productModel.productImages.isNotEmpty)
-                    ? CachedNetworkImageProvider(productModel.productImages[0])
-                    : const AssetImage('assets/images/placeholder.png')
-                          as ImageProvider,
+                },
+                child: FillImageCard(
+                  borderRadius: 20,
+                  width: Get.width,
+                  heightImage: Get.height / 8,
 
-                title: Center(
-                  child: Text(
-                    productModel.productName,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                  imageProvider: (productModel.productImages.isNotEmpty)
+                      ? CachedNetworkImageProvider(productModel.productImages[0])
+                      : const AssetImage('assets/images/placeholder.png')
+                            as ImageProvider,
+
+                  title: Center(
+                    child: Text(
+                      productModel.productName,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ),

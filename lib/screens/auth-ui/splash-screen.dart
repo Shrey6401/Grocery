@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:grocery/controllers/get-user-data-controller.dart';
+import 'package:grocery/screens/admin-panel/admin-main-screen.dart';
 import 'package:grocery/screens/auth-ui/welcome.dart';
 import 'package:grocery/screens/userpanel/main-screen.dart';
 import 'package:grocery/utils/app-constant.dart';
@@ -14,12 +17,29 @@ class splashscreen extends StatefulWidget {
 }
 
 class _splashscreenState extends State<splashscreen> {
+  User? user = FirebaseAuth.instance.currentUser;
   @override
   void initState() {
     super.initState();
     Timer(Duration(seconds: 6), () {
       Get.offAll(()=>welcome_screen());
     });
+  }
+
+  Future<void> loggdin(BuildContext context) async {
+    if (user != null) {
+      final GetUserDataController getUserDataController =
+      Get.put(GetUserDataController());
+      var userData = await getUserDataController.getUserData(user!.uid);
+
+      if (userData[0]['isAdmin'] == true) {
+        Get.offAll(() => AdminMainScreen());
+      } else {
+        Get.offAll(() => mainscreen());
+      }
+    } else {
+      Get.to(() => welcome_screen());
+    }
   }
 
 

@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:grocery/models/product-model.dart';
+import 'package:grocery/screens/userpanel/product%20detail.dart';
 import 'package:grocery/utils/app-constant.dart';
 import 'package:image_card/image_card.dart';
 
@@ -47,7 +48,7 @@ class FlashSaleWidget extends StatelessWidget {
                 padding: const EdgeInsets.all(5.0),
                 child: GestureDetector(
                   onTap: () {
-                    // Yahan Product Details screen par navigate karenge
+                    Get.to(()=>ProductDetail(productModel: productModel));
                   },
                   child: FillImageCard(
                     borderRadius: 20.0,

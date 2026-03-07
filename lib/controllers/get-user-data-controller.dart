@@ -1,8 +1,14 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:get/get_state_manager/src/simple/get_controllers.dart';
+// ignore_for_file: file_names, unused_field
 
-class Getuserdatacontroller extends   GetxController {
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:get/get.dart';
+
+class GetUserDataController extends GetxController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  Future<List<QueryDocumentSnapshot<Object?>>> getUserData(String uId) async {
+    final QuerySnapshot userData =
+    await _firestore.collection('users').where('uId', isEqualTo: uId).get();
+    return userData.docs;
+  }
 }

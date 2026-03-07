@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:grocery/models/product-model.dart';
+import 'package:grocery/screens/userpanel/product%20detail.dart';
 import 'package:image_card/image_card.dart';
 
 class AllProductSaleScreen extends StatefulWidget {
@@ -67,36 +68,41 @@ class _AllProductSaleScreenState extends State<AllProductSaleScreen> {
               updatedAt: productData['updatedAt'],
             );
 
-            return FillImageCard(
-              borderRadius: 20,
-              width: Get.width / 2.3,
-              // Reduced image height to leave more room for text
-              heightImage: 110,
-              imageProvider: (productModel.productImages.isNotEmpty)
-                  ? CachedNetworkImageProvider(productModel.productImages[0])
-                  : const AssetImage('assets/images/placeholder.png') as ImageProvider,
-              title: Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min, // Prevents column from expanding
-                  children: [
-                    Text(
-                      productModel.productName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      "₹ ${productModel.fullPrice}",
-                      style: const TextStyle(
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
+            return GestureDetector(
+              onTap: (){
+                Get.to(() => ProductDetail(productModel: productModel));
+              },
+              child: FillImageCard(
+                borderRadius: 20,
+                width: Get.width / 2.3,
+                // Reduced image height to leave more room for text
+                heightImage: 110,
+                imageProvider: (productModel.productImages.isNotEmpty)
+                    ? CachedNetworkImageProvider(productModel.productImages[0])
+                    : const AssetImage('assets/images/placeholder.png') as ImageProvider,
+                title: Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min, // Prevents column from expanding
+                    children: [
+                      Text(
+                        productModel.productName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 2),
+                      Text(
+                        "₹ ${productModel.fullPrice}",
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );

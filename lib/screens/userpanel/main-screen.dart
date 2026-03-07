@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_navigation/src/extension_navigation.dart';
@@ -7,6 +8,7 @@ import 'package:grocery/screens/auth-ui/welcome.dart';
 import 'package:grocery/screens/userpanel/all-categories-screen.dart';
 import 'package:grocery/screens/userpanel/all-flash-sale-products.dart';
 import 'package:grocery/screens/userpanel/all-product-screen.dart';
+import 'package:grocery/screens/userpanel/cart%20screen.dart';
 import 'package:grocery/utils/app-constant.dart';
 import 'package:grocery/widgits/banner-widget.dart';
 import 'package:grocery/widgits/category-widget.dart';
@@ -30,7 +32,14 @@ class _mainscreenState extends State<mainscreen> {
       appBar: AppBar(
         backgroundColor: Appconstant.appmaincolor,
         title: Text(Appconstant.appmainname,style: TextStyle(color: Colors.white),),
-        actions: [],
+        actions: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: IconButton.filled(onPressed: (){
+              Get.to(()=>CartScreen());
+            }, icon: Icon(CupertinoIcons.cart,color: Colors.white,)),
+          )
+        ],
       ),
       drawer: DrawerWidget(),
       body: Column(
