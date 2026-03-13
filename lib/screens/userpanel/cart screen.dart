@@ -4,7 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:grocery/controllers/cart-price-controller.dart';
 import 'package:grocery/models/cart-model.dart';
+import 'package:grocery/screens/userpanel/checkout%20screen.dart';
 import 'package:grocery/utils/app-constant.dart';
 
 class CartScreen extends StatefulWidget {
@@ -16,6 +18,7 @@ class CartScreen extends StatefulWidget {
 
 class _CartScreenState extends State<CartScreen> {
   User? user = FirebaseAuth.instance.currentUser;
+  final ProductPriceController productPriceController = Get.put(ProductPriceController());
 
   @override
   Widget build(BuildContext context) {
@@ -31,117 +34,150 @@ class _CartScreenState extends State<CartScreen> {
             .collection('cartOrders')
             .snapshots(),
         builder: (context, snapshot) {
-          if (snapshot.hasError) return const Center(child: Text("Kuch galat hua!"));
+          if (snapshot.hasError) return const Center(child: Text("Error!"));
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CupertinoActivityIndicator());
           }
           if (snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text("Cart khali hai!"));
+            // Ensure the grand total at the bottom resets to 0
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              productPriceController.totalPrice.value = 0.0;
+            });
+            return const Center(child: Text("Cart is empty!"));
           }
 
-          return ListView.builder(
-            itemCount: snapshot.data!.docs.length,
-            itemBuilder: (context, index) {
-              final productData = snapshot.data!.docs[index];
-              String docString = productData.data().toString();
+          // Trigger total calculation whenever data changes
+          productPriceController.fetchProductPrice();
 
-              // Sabhi fields ke liye Safe Mapping
-              CartModel cartModel = CartModel(
-                productId: docString.contains('productId') ? productData['productId'] : '',
-                categoryId: docString.contains('categoryId') ? productData['categoryId'] : '',
-                productName: docString.contains('productName') ? productData['productName'] : 'Unknown',
-                categoryName: docString.contains('categoryName') ? productData['categoryName'] : '',
-                salePrice: docString.contains('salePrice') ? productData['salePrice'] : '',
-                fullPrice: docString.contains('fullPrice') ? productData['fullPrice'] : '',
-                productImages: docString.contains('productImages')
-                    ? List<String>.from(productData['productImages'])
-                    : [],
-                deliveryTime: docString.contains('deliveryTime') ? productData['deliveryTime'] : '',
-                isSale: docString.contains('isSale') ? productData['isSale'] : false,
-                productDescription: docString.contains('productDescription') ? productData['productDescription'] : '',
-                createdAt: docString.contains('createdAt') ? productData['createdAt'] : null,
-                updatedAt: docString.contains('updatedAt') ? productData['updatedAt'] : null,
-                productQuantity: docString.contains('productQuantity') ? productData['productQuantity'] : 1,
-                productTotalPrice: docString.contains('productTotalPrice')
-                    ? double.parse(productData['productTotalPrice'].toString())
-                    : 0.0,
-              );
-
-              return Card(
-                elevation: 3,
-                margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: CachedNetworkImageProvider(
-                      cartModel.productImages.isNotEmpty ? cartModel.productImages[0] : 'https://via.placeholder.com/150',
-                    ),
-                  ),
-                  title: Text(cartModel.productName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Row(
-                    children: [
-                      Text("₹ ${cartModel.productTotalPrice}"),
-                      const SizedBox(width: 15),
-                      // Quantity Buttons (Design purposes)
-                      const Icon(Icons.remove_circle_outline, size: 18),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Text("${cartModel.productQuantity}"),
-                      ),
-                      const Icon(Icons.add_circle_outline, size: 18),
-                    ],
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () async {
-                      await FirebaseFirestore.instance
-                          .collection('cart')
-                          .doc(user!.uid)
-                          .collection('cartOrders')
-                          .doc(cartModel.productId)
-                          .delete();
-                    },
-                  ),
-                ),
-              );
-            },
-          );
-        },
-      ),
-
-      // YE RAHA AAPKA CHECKOUT SECTION!
-      bottomNavigationBar: Container(
-        margin: const EdgeInsets.only(bottom: 5.0),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          return Column(
             children: [
-              const Text(
-                "Total: ₹ XXXX", // Isse hum agle video/lecture mein dynamic karenge
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: snapshot.data!.docs.length,
+                  itemBuilder: (context, index) {
+                    final productDoc = snapshot.data!.docs[index];
+                    Map<String, dynamic> data = productDoc.data() as Map<String, dynamic>;
+
+                    // Mapping to our model
+                    CartModel cartModel = CartModel.fromMap(data);
+
+                    return Card(
+                      elevation: 3,
+                      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundImage: CachedNetworkImageProvider(
+                            cartModel.productImages.isNotEmpty ? cartModel.productImages[0] : '',
+                          ),
+                        ),
+                        title: Text(cartModel.productName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Row(
+                          children: [
+                            Text(
+                              "₹ ${cartModel.productTotalPrice.toStringAsFixed(1)}",
+                              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+                            ),
+                            const SizedBox(width: 15),
+
+                            /// MINUS BUTTON
+                            GestureDetector(
+                              onTap: () async {
+                                if (cartModel.productQuantity > 1) {
+                                  int newQty = cartModel.productQuantity - 1;
+
+                                  // Get unit price from model (handles String-to-Double parsing)
+                                  double unitPrice = cartModel.isSale ? cartModel.salePrice : cartModel.fullPrice;
+
+                                  if (unitPrice > 0) {
+                                    await FirebaseFirestore.instance
+                                        .collection('cart').doc(user!.uid)
+                                        .collection('cartOrders').doc(cartModel.productId)
+                                        .update({
+                                      'productQuantity': newQty,
+                                      'productTotalPrice': (unitPrice * newQty),
+                                    });
+                                  }
+                                }
+                              },
+                              child: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                            ),
+
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                              child: Text("${cartModel.productQuantity}"),
+                            ),
+
+                            /// PLUS BUTTON
+                            GestureDetector(
+                              onTap: () async {
+                                int newQty = cartModel.productQuantity + 1;
+                                double unitPrice = cartModel.isSale ? cartModel.salePrice : cartModel.fullPrice;
+
+                                // CHECK: Only update if the base price was found
+                                if (unitPrice > 0) {
+                                  await FirebaseFirestore.instance
+                                      .collection('cart').doc(user!.uid)
+                                      .collection('cartOrders').doc(cartModel.productId)
+                                      .update({
+                                    'productQuantity': newQty,
+                                    'productTotalPrice': (unitPrice * newQty),
+                                  });
+                                } else {
+                                  Get.snackbar(
+                                    "Data Error",
+                                    "Base price missing in this Cart record. Please delete and re-add this item.",
+                                    backgroundColor: Colors.orange,
+                                    colorText: Colors.white,
+                                    snackPosition: SnackPosition.BOTTOM,
+                                  );
+                                }
+                              },
+                              child: const Icon(Icons.add_circle_outline, color: Colors.green),
+                            ),
+                          ],
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () async {
+                            await FirebaseFirestore.instance
+                                .collection('cart').doc(user!.uid)
+                                .collection('cartOrders').doc(cartModel.productId)
+                                .delete();
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
-              Material(
-                child: Container(
-                  width: Get.width / 2.0,
-                  height: Get.height / 18,
-                  decoration: BoxDecoration(
-                    color: Appconstant.appmaincolor,
-                    borderRadius: BorderRadius.circular(20.0),
-                  ),
-                  child: TextButton(
-                    child: const Text(
-                      "Checkout",
-                      style: TextStyle(color: Colors.white),
+
+              // DYNAMIC BOTTOM NAVIGATION TOTAL
+              Container(
+                padding: const EdgeInsets.all(12.0),
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 5)]
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Obx(() => Text(
+                        "Total: ₹ ${productPriceController.totalPrice.value.toStringAsFixed(1)}",
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)
+                    )),
+                    ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: Appconstant.appmaincolor),
+                        onPressed: () {
+                          Get.to(()=> CheckOutScreen());
+                        },
+                        child: const Text("Checkout", style: TextStyle(color: Colors.white))
                     ),
-                    onPressed: () {
-                      // Checkout logic yahan aayega
-                    },
-                  ),
+                  ],
                 ),
               ),
             ],
-          ),
-        ),
+          );
+        },
       ),
     );
   }

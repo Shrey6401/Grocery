@@ -1,9 +1,11 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:grocery/models/product-model.dart';
+import 'package:grocery/screens/userpanel/cart%20screen.dart';
 import 'package:grocery/utils/app-constant.dart';
 
 class ProductDetail extends StatefulWidget {
@@ -25,6 +27,14 @@ class _ProductDetailState extends State<ProductDetail> {
           "Product Details",
           style: TextStyle(color: Appconstant.appTextColor),
         ),
+        actions: [
+          IconButton(
+            onPressed: () {
+              Get.to(CartScreen());
+            },
+            icon: Icon(CupertinoIcons.cart),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -41,7 +51,7 @@ class _ProductDetailState extends State<ProductDetail> {
                     fit: BoxFit.cover,
                     width: Get.width,
                     errorBuilder: (context, error, stackTrace) =>
-                    const Icon(Icons.broken_image, size: 50),
+                        const Icon(Icons.broken_image, size: 50),
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
                       return const Center(child: CircularProgressIndicator());
@@ -76,10 +86,12 @@ class _ProductDetailState extends State<ProductDetail> {
                             child: Text(
                               widget.productModel.productName,
                               style: const TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 18),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
                             ),
                           ),
-                          const Icon(Icons.favorite_outline, color: Colors.red)
+                          const Icon(Icons.favorite_outline, color: Colors.red),
                         ],
                       ),
                     ),
@@ -89,21 +101,23 @@ class _ProductDetailState extends State<ProductDetail> {
                       padding: const EdgeInsets.all(8.0),
                       child: Text(
                         widget.productModel.isSale &&
-                            widget.productModel.salePrice.isNotEmpty
+                                widget.productModel.salePrice.isNotEmpty
                             ? "Rs: ${widget.productModel.salePrice}"
                             : "Rs: ${widget.productModel.fullPrice}",
                         style: TextStyle(
-                            fontSize: 18,
-                            color: Appconstant.appSecondaryColor,
-                            fontWeight: FontWeight.bold),
+                          fontSize: 18,
+                          color: Appconstant.appSecondaryColor,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
 
                     // Category & Description
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child:
-                      Text("Category: ${widget.productModel.categoryName}"),
+                      child: Text(
+                        "Category: ${widget.productModel.categoryName}",
+                      ),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(8.0),
@@ -127,7 +141,8 @@ class _ProductDetailState extends State<ProductDetail> {
 
                               if (currentUser != null) {
                                 await checkProductExistence(
-                                    uId: currentUser.uid);
+                                  uId: currentUser.uid,
+                                );
                               } else {
                                 Get.snackbar(
                                   "Login Required",
@@ -139,10 +154,12 @@ class _ProductDetailState extends State<ProductDetail> {
                               }
                             },
                             child: _buildActionButton(
-                                "Add to cart", Appconstant.appSecondaryColor,
-                                    () {
-                                  // Handled by GestureDetector onTap
-                                }),
+                              "Add to cart",
+                              Appconstant.appSecondaryColor,
+                              () {
+                                // Handled by GestureDetector onTap
+                              },
+                            ),
                           ),
                         ],
                       ),
@@ -167,9 +184,13 @@ class _ProductDetailState extends State<ProductDetail> {
         borderRadius: BorderRadius.circular(10.0),
       ),
       child: Center(
-        child: Text(label,
-            style: TextStyle(
-                color: Appconstant.appTextColor, fontWeight: FontWeight.bold)),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: Appconstant.appTextColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
     );
   }
@@ -190,19 +211,24 @@ class _ProductDetailState extends State<ProductDetail> {
         int currentQuantity = snapshot['productQuantity'];
         int updatedQuantity = currentQuantity + 1;
 
-        double price = double.parse(widget.productModel.isSale
-            ? widget.productModel.salePrice
-            : widget.productModel.fullPrice);
+        double price = double.parse(
+          widget.productModel.isSale
+              ? widget.productModel.salePrice
+              : widget.productModel.fullPrice,
+        );
 
         await documentReference.update({
           'productQuantity': updatedQuantity,
           'productTotalPrice': price * updatedQuantity,
         });
 
-        Get.snackbar("Cart Updated", "Increased quantity of this item",
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.blue,
-            colorText: Colors.white);
+        Get.snackbar(
+          "Cart Updated",
+          "Increased quantity of this item",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.blue,
+          colorText: Colors.white,
+        );
       } else {
         // Scenario: New product, create parent document and sub-collection entry
         await FirebaseFirestore.instance.collection('cart').doc(uId).set({
@@ -210,9 +236,11 @@ class _ProductDetailState extends State<ProductDetail> {
           'lastUpdated': DateTime.now(),
         }, SetOptions(merge: true));
 
-        double price = double.parse(widget.productModel.isSale
-            ? widget.productModel.salePrice
-            : widget.productModel.fullPrice);
+        double price = double.parse(
+          widget.productModel.isSale
+              ? widget.productModel.salePrice
+              : widget.productModel.fullPrice,
+        );
 
         await documentReference.set({
           'productId': widget.productModel.productId,
@@ -227,15 +255,22 @@ class _ProductDetailState extends State<ProductDetail> {
           'createdAt': DateTime.now(),
         });
 
-        Get.snackbar("Success", "Added to cart",
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.green,
-            colorText: Colors.white);
+        Get.snackbar(
+          "Success",
+          "Added to cart",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
       }
     } catch (e) {
       print("Error adding to cart: $e");
-      Get.snackbar("Error", "Something went wrong. Check your console.",
-          backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar(
+        "Error",
+        "Something went wrong. Check your console.",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     }
   }
 }

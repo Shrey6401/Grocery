@@ -5,14 +5,19 @@ class CartModel {
   final String categoryId;
   final String productName;
   final String categoryName;
-  final String salePrice;
-  final String fullPrice;
-  final List productImages;
+
+  final double salePrice;
+  final double fullPrice;
+
+  final List<String> productImages;
   final String deliveryTime;
+
   final bool isSale;
   final String productDescription;
+
   final dynamic createdAt;
   final dynamic updatedAt;
+
   final int productQuantity;
   final double productTotalPrice;
 
@@ -54,20 +59,43 @@ class CartModel {
 
   factory CartModel.fromMap(Map<String, dynamic> json) {
     return CartModel(
-      productId: json['productId'],
-      categoryId: json['categoryId'],
-      productName: json['productName'],
-      categoryName: json['categoryName'],
-      salePrice: json['salePrice'],
-      fullPrice: json['fullPrice'],
-      productImages: json['productImages'],
-      deliveryTime: json['deliveryTime'],
-      isSale: json['isSale'],
-      productDescription: json['productDescription'],
+      productId: json['productId'] ?? '',
+      categoryId: json['categoryId'] ?? '',
+      productName: json['productName'] ?? '',
+      categoryName: json['categoryName'] ?? '',
+
+      salePrice: _parsePrice(json['salePrice']),
+      fullPrice: _parsePrice(json['fullPrice']),
+
+      productImages: List<String>.from(json['productImages'] ?? []),
+      deliveryTime: json['deliveryTime'] ?? '',
+
+      isSale: json['isSale'] ?? false,
+      productDescription: json['productDescription'] ?? '',
+
       createdAt: json['createdAt'],
       updatedAt: json['updatedAt'],
-      productQuantity: json['productQuantity'],
-      productTotalPrice: json['productTotalPrice'],
+
+      productQuantity: (json['productQuantity'] ?? 1) as int,
+      productTotalPrice: _parsePrice(json['productTotalPrice']),
     );
+  }
+
+  static double _parsePrice(dynamic value) {
+    if (value == null) return 0;
+
+    if (value is int) {
+      return value.toDouble();
+    }
+
+    if (value is double) {
+      return value;
+    }
+
+    if (value is String) {
+      return double.tryParse(value) ?? 0;
+    }
+
+    return 0;
   }
 }
