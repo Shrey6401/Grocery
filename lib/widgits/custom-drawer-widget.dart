@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:grocery/screens/auth-ui/welcome.dart';
+import 'package:grocery/screens/userpanel/all-order-screen.dart';
 import 'package:grocery/utils/app-constant.dart';
 
 class DrawerWidget extends StatefulWidget {
@@ -110,8 +111,8 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   color: Appconstant.appTextColor,
                 ),
                 onTap: () {
-                  /*Get.back();
-                  Get.to(() => AllOrdersScreen());*/
+                  Get.back();
+                  Get.to(() => AllOrdersScreen());
                 },
               ),
             ),

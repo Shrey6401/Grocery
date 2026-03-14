@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:grocery/models/product-model.dart';
 import 'package:grocery/screens/userpanel/cart%20screen.dart';
 import 'package:grocery/utils/app-constant.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProductDetail extends StatefulWidget {
   final ProductModel productModel;
@@ -51,7 +52,7 @@ class _ProductDetailState extends State<ProductDetail> {
                     fit: BoxFit.cover,
                     width: Get.width,
                     errorBuilder: (context, error, stackTrace) =>
-                        const Icon(Icons.broken_image, size: 50),
+                    const Icon(Icons.broken_image, size: 50),
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
                       return const Center(child: CircularProgressIndicator());
@@ -101,7 +102,7 @@ class _ProductDetailState extends State<ProductDetail> {
                       padding: const EdgeInsets.all(8.0),
                       child: Text(
                         widget.productModel.isSale &&
-                                widget.productModel.salePrice.isNotEmpty
+                            widget.productModel.salePrice.isNotEmpty
                             ? "Rs: ${widget.productModel.salePrice}"
                             : "Rs: ${widget.productModel.fullPrice}",
                         style: TextStyle(
@@ -130,12 +131,14 @@ class _ProductDetailState extends State<ProductDetail> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          _buildActionButton("WhatsApp", Colors.green, () {
-                            // Logic for WhatsApp can be added here
-                          }),
+                          GestureDetector(
+                            onTap: () {
+                              sendwhatsapp(productModel: widget.productModel);
+                            },
+                            child: _buildActionButton("WhatsApp", Colors.green),
+                          ),
                           GestureDetector(
                             onTap: () async {
-                              // Fetch the user instance at the moment of click
                               User? currentUser =
                                   FirebaseAuth.instance.currentUser;
 
@@ -156,9 +159,6 @@ class _ProductDetailState extends State<ProductDetail> {
                             child: _buildActionButton(
                               "Add to cart",
                               Appconstant.appSecondaryColor,
-                              () {
-                                // Handled by GestureDetector onTap
-                              },
                             ),
                           ),
                         ],
@@ -175,7 +175,7 @@ class _ProductDetailState extends State<ProductDetail> {
   }
 
   // Helper method for buttons
-  Widget _buildActionButton(String label, Color color, VoidCallback onPressed) {
+  Widget _buildActionButton(String label, Color color) {
     return Container(
       width: Get.width / 2.4,
       height: Get.height / 16,
@@ -195,6 +195,40 @@ class _ProductDetailState extends State<ProductDetail> {
     );
   }
 
+  // WhatsApp Logic from video reference
+  static Future<void> sendwhatsapp({required ProductModel productModel}) async {
+    // International format WITHOUT '+' or spaces
+    const String number = "917827539557";
+
+    final String message = "Hi Shrey Sharma,\n\n"
+        "I want to know about this Product:\n"
+        "Product Name: ${productModel.productName}\n"
+        "Product Price: ${productModel.isSale ? productModel.salePrice : productModel.fullPrice}";
+
+    final Uri url = Uri.parse(
+        "https://wa.me/$number?text=${Uri.encodeComponent(message)}"
+    );
+
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(
+          url,
+          mode: LaunchMode.externalApplication,
+        );
+      } else {
+        Get.snackbar(
+          "Error",
+          "WhatsApp is not installed on this device",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e) {
+      debugPrint("WhatsApp error: $e");
+    }
+  }
+
   // logic for Adding/Updating Cart
   Future<void> checkProductExistence({required String uId}) async {
     try {
@@ -207,7 +241,6 @@ class _ProductDetailState extends State<ProductDetail> {
       DocumentSnapshot snapshot = await documentReference.get();
 
       if (snapshot.exists) {
-        // Scenario: Product already in cart, increment quantity
         int currentQuantity = snapshot['productQuantity'];
         int updatedQuantity = currentQuantity + 1;
 
@@ -230,7 +263,6 @@ class _ProductDetailState extends State<ProductDetail> {
           colorText: Colors.white,
         );
       } else {
-        // Scenario: New product, create parent document and sub-collection entry
         await FirebaseFirestore.instance.collection('cart').doc(uId).set({
           'uId': uId,
           'lastUpdated': DateTime.now(),
@@ -264,13 +296,7 @@ class _ProductDetailState extends State<ProductDetail> {
         );
       }
     } catch (e) {
-      print("Error adding to cart: $e");
-      Get.snackbar(
-        "Error",
-        "Something went wrong. Check your console.",
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      debugPrint("Error adding to cart: $e");
     }
   }
 }
