@@ -3,8 +3,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:get/get.dart';
+import 'package:grocery/controllers/rating_controller.dart';
 import 'package:grocery/models/product-model.dart';
+import 'package:grocery/models/review_model.dart';
 import 'package:grocery/screens/userpanel/cart%20screen.dart';
 import 'package:grocery/utils/app-constant.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -20,6 +23,7 @@ class ProductDetail extends StatefulWidget {
 class _ProductDetailState extends State<ProductDetail> {
   @override
   Widget build(BuildContext context) {
+    CalculateProductRatingController calculateProductRatingController = Get.put(CalculateProductRatingController(widget.productModel.productId));
     return Scaffold(
       appBar: AppBar(
         iconTheme: IconThemeData(color: Appconstant.appTextColor),
@@ -96,6 +100,34 @@ class _ProductDetailState extends State<ProductDetail> {
                         ],
                       ),
                     ),
+                    Row(
+                      children: [
+                        Container(
+                          alignment: Alignment.topLeft,
+                          child: RatingBar.builder(
+                            glow: false,
+                            ignoreGestures: true,
+                            initialRating: double.parse(
+                                calculateProductRatingController.averageRating
+                                    .toString()),
+                            minRating: 1,
+                            direction: Axis.horizontal,
+                            allowHalfRating: true,
+                            itemCount: 5,
+                            itemSize: 25,
+                            itemPadding:
+                            EdgeInsets.symmetric(horizontal: 2.0),
+                            itemBuilder: (context, _) => Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                            ),
+                            onRatingUpdate: (value) {},
+                          ),
+                        ),
+                        Text(calculateProductRatingController.averageRating
+                            .toString()),
+                      ],
+                    ),
 
                     // Price Section
                     Padding(
@@ -168,6 +200,70 @@ class _ProductDetailState extends State<ProductDetail> {
                 ),
               ),
             ),
+            // Review
+            FutureBuilder(
+              future: FirebaseFirestore.instance
+                  .collection('products')
+                  .doc(widget.productModel.productId)
+                  .collection('review')
+                  .get(),
+              builder: (BuildContext context,
+                  AsyncSnapshot<QuerySnapshot> snapshot) {
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text("Error"),
+                  );
+                }
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Container(
+                    height: Get.height / 5,
+                    child: Center(
+                      child: CupertinoActivityIndicator(),
+                    ),
+                  );
+                }
+
+                if (snapshot.data!.docs.isEmpty) {
+                  return Center(
+                    child: Text("No reviews found!"),
+                  );
+                }
+
+                if (snapshot.data != null) {
+                  return ListView.builder(
+                    physics: BouncingScrollPhysics(),
+                    shrinkWrap: true,
+                    itemCount: snapshot.data!.docs.length,
+                    itemBuilder: (context, index) {
+                      var data = snapshot.data!.docs[index];
+                      ReviewModel reviewModel = ReviewModel(
+                        customerName: data['customerName'],
+                        customerPhone: data['customerPhone'],
+                        customerDeviceToken: data['customerDeviceToken'],
+                        customerId: data['customerId'],
+                        feedback: data['feedback'],
+                        rating: data['rating'],
+                        createdAt: data['createdAt'],
+                      );
+                      return Card(
+                        elevation: 5,
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            child: Text(reviewModel.customerName[0]),
+                          ),
+                          title: Text(reviewModel.customerName),
+                          subtitle: Text(reviewModel.feedback),
+                          trailing: Text(reviewModel.rating),
+                        ),
+                      );
+                    },
+                  );
+                }
+
+                return Container();
+              },
+            ),
+
           ],
         ),
       ),

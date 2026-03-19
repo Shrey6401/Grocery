@@ -3,10 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:grocery/models/order-model.dart';
+import 'package:grocery/screens/userpanel/add-review-screen.dart';
 import 'package:grocery/utils/app-constant.dart';
-
-// Note: Ensure you have an OrderModel or adjust your CartModel to include the 'status' field
-import 'package:grocery/models/cart-model.dart';
 
 class AllOrdersScreen extends StatefulWidget {
   const AllOrdersScreen({super.key});
@@ -22,23 +22,26 @@ class _AllOrdersScreenState extends State<AllOrdersScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.white),
         backgroundColor: Appconstant.appmaincolor,
         title: const Text("All Orders", style: TextStyle(color: Colors.white)),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        // CHANGE: Target the 'orders' collection instead of 'cart'
+        // Streaming from the 'orders' -> 'uid' -> 'confirmOrders' collection
         stream: FirebaseFirestore.instance
             .collection('orders')
             .doc(user!.uid)
             .collection('confirmOrders')
+            .orderBy('createdAt', descending: true) // Added ordering for better UX
             .snapshots(),
         builder: (context, snapshot) {
-          if (snapshot.hasError) return const Center(child: Text("Error fetching orders!"));
+          if (snapshot.hasError) {
+            return const Center(child: Text("Error fetching orders!"));
+          }
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CupertinoActivityIndicator());
           }
-          if (snapshot.data!.docs.isEmpty) {
+          if (snapshot.data == null || snapshot.data!.docs.isEmpty) {
             return const Center(child: Text("No orders found"));
           }
 
@@ -48,40 +51,70 @@ class _AllOrdersScreenState extends State<AllOrdersScreen> {
               final productDoc = snapshot.data!.docs[index];
               Map<String, dynamic> data = productDoc.data() as Map<String, dynamic>;
 
-              // Using your model (ensure it matches the keys in your 'orders' collection)
-              CartModel cartModel = CartModel.fromMap(data);
+              // Map the data to your OrderModel
+              OrderModel orderModel = OrderModel.fromMap(data);
 
               return Card(
                 elevation: 3,
-                margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Appconstant.appmaincolor,
-                    backgroundImage: CachedNetworkImageProvider(
-                      cartModel.productImages.isNotEmpty ? cartModel.productImages[0] : '',
+                  contentPadding: const EdgeInsets.all(10),
+                  leading: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: CachedNetworkImage(
+                      imageUrl: orderModel.productImages.isNotEmpty
+                          ? orderModel.productImages[0]
+                          : '',
+                      width: 60,
+                      height: 60,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => const CupertinoActivityIndicator(),
+                      errorWidget: (context, url, error) => const Icon(Icons.image_not_supported),
                     ),
                   ),
-                  title: Text(cartModel.productName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Row(
+                  title: Text(
+                    orderModel.productName,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("₹ ${cartModel.productTotalPrice.toStringAsFixed(1)}"),
-                      const SizedBox(width: 10),
+                      const SizedBox(height: 5),
+                      Text("Total: ₹ ${orderModel.productTotalPrice.toStringAsFixed(1)}"),
+                      const SizedBox(height: 5),
 
-                      // VIDEO LOGIC: Show Status (Pending/Delivered)
-                      // Assuming your order document has a 'status' boolean field
-                      data['status'] == false
-                          ? const Text(
-                          "Pending",
-                          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)
-                      )
-                          : const Text(
-                          "Delivered",
-                          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)
+                      // Status Logic
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: orderModel.status ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: Text(
+                          orderModel.status ? "Delivered" : "Pending",
+                          style: TextStyle(
+                            color: orderModel.status ? Colors.green : Colors.orange,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                  // Removed the Plus/Minus buttons as orders are already confirmed
-                  trailing: Text("Qty: ${cartModel.productQuantity}"),
+                  // Only show Review button if status is TRUE (Delivered)
+                  trailing: orderModel.status
+                      ? ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Appconstant.appmaincolor,
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: () {
+                      Get.to(AddReviewScreen(orderModel: orderModel));
+                    },
+                    child: const Text("Review"),
+                  )
+                      : SizedBox.shrink(),
                 ),
               );
             },
