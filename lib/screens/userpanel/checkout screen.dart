@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:grocery/controllers/get-customer-device-token-controller.dart';
 import 'package:grocery/services/placeorder.dart';
 import 'package:grocery/utils/app-constant.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 class CheckOutScreen extends StatefulWidget {
   const CheckOutScreen({super.key});
@@ -17,13 +18,28 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
+
   User? user = FirebaseAuth.instance.currentUser;
+  late Razorpay _razorpay;
+  double totalAmount = 0;
+  String customerToken = "";
+
+  @override
+  void initState() {
+    super.initState();
+    _razorpay = Razorpay();
+    // Initialize listeners once in initState, not in build
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
+    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+  }
 
   @override
   void dispose() {
     nameController.dispose();
     phoneController.dispose();
     addressController.dispose();
+    _razorpay.clear(); // Clear Razorpay instance
     super.dispose();
   }
 
@@ -42,66 +58,56 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
             .collection('cartOrders')
             .snapshots(),
         builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-          if (snapshot.hasError) {
-            return const Center(child: Text("Error"));
-          }
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text("No products in cart"));
+          if (snapshot.hasError) return const Center(child: Text("Error"));
+          if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return const Center(child: Text("No products in cart"));
+
+          // Calculate total price dynamically
+          totalAmount = 0;
+          for (var doc in snapshot.data!.docs) {
+            totalAmount += double.parse(doc['productTotalPrice'].toString());
           }
 
-          if (snapshot.hasData) {
-            double totalAmount = 0;
-            // Calculate total price dynamically
-            for (var doc in snapshot.data!.docs) {
-              totalAmount += double.parse(doc['productTotalPrice'].toString());
-            }
-
-            return Column(
-              children: [
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: snapshot.data!.docs.length,
-                    itemBuilder: (context, index) {
-                      final data = snapshot.data!.docs[index];
-                      return Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-                        elevation: 2,
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundImage: NetworkImage(data['productImages'][0]),
-                          ),
-                          title: Text(data['productName']),
-                          subtitle: Text("Rs. ${data['productTotalPrice']}"),
+          return Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  itemCount: snapshot.data!.docs.length,
+                  itemBuilder: (context, index) {
+                    final data = snapshot.data!.docs[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                      elevation: 2,
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundImage: NetworkImage(data['productImages'][0]),
                         ),
-                      );
-                    },
-                  ),
-                ),
-                // Total Amount Section
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    border: const Border(top: BorderSide(color: Colors.black12)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text("Total Amount", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      Text(
-                        "Rs. $totalAmount",
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
+                        title: Text(data['productName']),
+                        subtitle: Text("Rs. ${data['productTotalPrice']}"),
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
-              ],
-            );
-          }
-          return Container();
+              ),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  border: const Border(top: BorderSide(color: Colors.black12)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("Total Amount", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(
+                      "Rs. $totalAmount",
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
         },
       ),
       bottomNavigationBar: Padding(
@@ -146,14 +152,26 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
                 child: ElevatedButton(
                   onPressed: () async {
                     if (nameController.text.isNotEmpty && addressController.text.isNotEmpty && phoneController.text.isNotEmpty) {
-                      String customerToken = await getCustomerDeviceToken();
-                      placeOrder(
-                        context: context,
-                        customerName: nameController.text.trim(),
-                        customerPhone: phoneController.text.trim(),
-                        customerAddress: addressController.text.trim(),
-                        customerDeviceToken: customerToken,
-                      );
+
+                      // Show loading
+                      Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
+
+                      customerToken = await getCustomerDeviceToken();
+
+                      Get.back(); // Close loading
+
+                      var options = {
+                        'key': 'rzp_test_SUGmOhLCc4CXcq',
+                        'amount': (totalAmount * 100).toInt(), // Amount in paise
+                        'currency': 'INR',
+                        'name': 'Grocery App',
+                        'description': 'Payment for Order',
+                        'prefill': {
+                          'contact': phoneController.text,
+                          'email': user?.email ?? 'test@example.com'
+                        }
+                      };
+                      _razorpay.open(options);
                     } else {
                       Get.snackbar("Error", "All fields are required", backgroundColor: Colors.red, colorText: Colors.white);
                     }
@@ -182,5 +200,24 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
         ),
       ),
     );
+  }
+
+  void _handlePaymentSuccess(PaymentSuccessResponse response) {
+    placeOrder(
+      context: context,
+      customerName: nameController.text.trim(),
+      customerPhone: phoneController.text.trim(),
+      customerAddress: addressController.text.trim(),
+      customerDeviceToken: customerToken,
+    );
+    Get.snackbar("Success", "Order placed successfully!", backgroundColor: Colors.green, colorText: Colors.white);
+  }
+
+  void _handlePaymentError(PaymentFailureResponse response) {
+    Get.snackbar("Payment Failed", response.message ?? "Unknown Error", backgroundColor: Colors.red, colorText: Colors.white);
+  }
+
+  void _handleExternalWallet(ExternalWalletResponse response) {
+    print("External Wallet: ${response.walletName}");
   }
 }
